@@ -1,0 +1,8 @@
+src
+examples
+test.js
+.babelrc
+.npmignore
+.travis.yml
+oldtest.js
+loader.js

@@ -1,0 +1,41 @@
+{
+  "name": "redux-await",
+  "version": "1.0.0",
+  "description": "Manage async redux actions sanely",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel src --out-dir lib",
+    "prepublish": "npm run test && npm run build",
+    "test-cov": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha 'test.js' -- --reporter dot --require babel/register",
+    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha 'test.js' -- -R spec --require babel/register",
+    "test": "mocha --compilers js:babel/register --recursive"
+  },
+  "author": "Moshe Kolodny",
+  "license": "MIT",
+  "devDependencies": {
+    "babel": "^5.8.34",
+    "coveralls": "^2.11.4",
+    "expect": "^1.13.0",
+    "istanbul": "^0.4.1",
+    "mocha": "^2.3.4",
+    "redux": "^3.0.4"
+  },
+  "dependencies": {
+    "expect": "^1.13.0",
+    "redux": "^3.0.4",
+    "babel": "^5.8.34"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kolodny/redux-await.git"
+  },
+  "keywords": [
+    "redux",
+    "async",
+    "await"
+  ],
+  "bugs": {
+    "url": "https://github.com/kolodny/redux-await/issues"
+  },
+  "homepage": "https://github.com/kolodny/redux-await#readme"
+}
