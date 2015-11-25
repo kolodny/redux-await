@@ -30,10 +30,6 @@ let createStoreWithMiddleware = applyMiddleware(
 2. Wrap your reducers
 
 ```js
-const intialState = {
-  users: [],
-}
-
 const reducer = (state = [], action = {}) => {
   if (action.type === GET_USERS) {
     return { ...state, users: action.payload.users };
@@ -54,7 +50,7 @@ export default createReducer(reducer);
 
 Note, if you are using `combineReducers` then you need to wrap each reducer that you are combining independently and not the master reducer that `combineReducers` returns
 
-Now your action creators can contain promises:
+Now your action creators can contain promises, you just need to add `AWAIT_MARKER` to the action like this:
 
 ```js
 // old code
@@ -107,7 +103,7 @@ class Container extends Component {
     return <div>
       { getInfo(users).status === 'pending' && <div>Loading...</div> }
       { getInfo(users).status === 'success' && <MyTable data={users} /> }
-      { getInfo(users).status === 'failure' && <div>Opps: {getInfo(users).error.message}</div> }
+      { getInfo(users).status === 'failure' && <div>Oops: {getInfo(users).error.message}</div> }
       { getInfo(user).status === 'pending' && <div>Saving new user</div> }
       { getInfo(user).status === 'failure' && <div>There was an error saving</div> }
     </div>;
