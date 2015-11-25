@@ -123,8 +123,8 @@ It's a little weird using the prop of the action creator to inject it's status i
 
 [npm-image]: https://img.shields.io/npm/v/redux-await.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/redux-await
-[travis-image]: https://img.shields.io/travis/symbiont-io/redux-await.svg?style=flat-square
-[travis-url]: https://travis-ci.org/symbiont-io/redux-await
+[travis-image]: https://img.shields.io/travis/kolodny/redux-await.svg?style=flat-square
+[travis-url]: https://travis-ci.org/kolodny/redux-await
 [coveralls-image]: https://img.shields.io/coveralls/kolodny/redux-await.svg?style=flat-square
 [coveralls-url]: https://coveralls.io/r/kolodny/redux-await
 [downloads-image]: http://img.shields.io/npm/dm/redux-await.svg?style=flat-square
