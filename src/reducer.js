@@ -2,7 +2,6 @@ import { AWAIT_META_CONTAINER, AWAIT_INFO_CONTAINER } from './constants';
 import { getPromiseKeys, objectWithoutProperties } from './utils';
 
 export default reducer => (state, action) => {
-  debugger;
   let nextState;
   if (action.meta && action.meta[AWAIT_META_CONTAINER]) {
     const awaitMeta = action.meta[AWAIT_META_CONTAINER];
