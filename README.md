@@ -113,7 +113,7 @@ class Container extends Component {
 
 ## Advanced Stuff
 
-By default your reducer is called with the type specified in the action only on the success stage, you can listen to pending an fail events too by listening for `getPendingActionType(type)` and `getFailureActionType(type)` types, also your reducer is called every time (pending, success, failure) after the higher order reducer does it's thing, but you can still get the old state as the third parameter (not sure why you would ever need to though)
+By default your reducer is called with the `type` specified in the action only on the success stage, you can listen to pending and fail events too by listening for `getPendingActionType(type)` and `getFailureActionType(type)` types, also your reducer is called every time (pending, success, failure) after the higher order reducer does it's thing, but you can still get the old state as the third parameter (not sure why you would ever need to though)
 
 It's a little weird using the prop of the action creator to inject it's status info into state, but I couldn't really think of a better way to do it (WeakMaps somehow?)
 
