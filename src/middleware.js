@@ -1,4 +1,4 @@
-import { resolveProps, getNonPromiseProperties, getPromiseKeys } from './utils';
+import { resolveProps, getNonPromiseProperties, getPromiseKeys, objectWithoutProperties } from './utils';
 
 import { AWAIT_MARKER, AWAIT_META_CONTAINER } from './constants';
 
@@ -16,10 +16,7 @@ export const middleware = ({ dispatch }) => next => action => {
     const successMeta = { [AWAIT_META_CONTAINER]: { promiseKeys, scalarValues, status: 'success' } };
     const failureMeta = { [AWAIT_META_CONTAINER]: { promiseKeys, scalarValues, status: 'failure' } };
 
-    const newAction = { ...action };
-    newAction.type = undefined;
-    newAction.payload = undefined;
-    newAction.AWAIT_MARKER = undefined;
+    const newAction = objectWithoutProperties(action, ['type', 'payload', 'AWAIT_MARKER']);
 
     dispatch({
       ...newAction,
