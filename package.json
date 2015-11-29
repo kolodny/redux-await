@@ -1,6 +1,6 @@
 {
   "name": "redux-await",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "Manage async redux actions sanely",
   "main": "./lib/index.js",
   "scripts": {

@@ -1,31 +1,26 @@
 import { AWAIT_META_CONTAINER, AWAIT_INFO_CONTAINER } from './constants';
-import { getPromiseKeys, objectWithoutProperties } from './utils';
+import { getPromiseKeys } from './utils';
 
 export default reducer => (state, action) => {
-  let nextState;
   if (action.meta && action.meta[AWAIT_META_CONTAINER]) {
     const awaitMeta = action.meta[AWAIT_META_CONTAINER];
+    const { status } = awaitMeta;
 
-    if (awaitMeta.status === 'pending') {
-      const pendingProperties = {};
-      awaitMeta.promiseKeys.forEach(prop => pendingProperties[prop] = {
-        [AWAIT_INFO_CONTAINER]: { status: 'pending', error: null }
-      });
-      nextState = { ...state, ...pendingProperties };
-
-    } else if (awaitMeta.status === 'success') {
-      nextState = objectWithoutProperties(state, awaitMeta.promiseKeys);
-
-    } else if (awaitMeta.status === 'failure') {
-      const errorProperties = {};
-      awaitMeta.promiseKeys.forEach(prop => errorProperties[prop] = {
-        [AWAIT_INFO_CONTAINER]: { status: 'failure', error: action.payload }
-      });
-      nextState = { ...state, ...errorProperties };
+    if (typeof state !== 'object') {
+      throw new Error('redux-await only works with states which are objects');
     }
 
-  } else {
-    nextState = state
+    const info = {};
+    awaitMeta.promiseKeys.forEach(prop => {
+      info[prop] = { status };
+      if (status === 'failure') {
+        info[prop].error = action.payload;
+      }
+    });
+    const nextState = { ...state, [AWAIT_INFO_CONTAINER]: info };
+
+    return reducer(nextState, action, state);
   }
-  return reducer(nextState, action, state);
+
+  return reducer(state, action);
 };

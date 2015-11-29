@@ -93,6 +93,7 @@ import { getInfo } from 'redux-await'
 class Container extends Component {
   render() {
     const { users, user } = this.props;
+    const info = getInfo(this.props);
 
     // old code
     //return <div>
@@ -101,11 +102,11 @@ class Container extends Component {
 
     // new code
     return <div>
-      { getInfo(users).status === 'pending' && <div>Loading...</div> }
-      { getInfo(users).status === 'success' && <MyTable data={users} /> }
-      { getInfo(users).status === 'failure' && <div>Oops: {getInfo(users).error.message}</div> }
-      { getInfo(user).status === 'pending' && <div>Saving new user</div> }
-      { getInfo(user).status === 'failure' && <div>There was an error saving</div> }
+      { info.users.status === 'pending' && <div>Loading...</div> }
+      { info.users.status === 'success' && <MyTable data={users} /> }
+      { info.users.status === 'failure' && <div>Oops: {info.users.error.message}</div> }
+      { info.user.status === 'pending' && <div>Saving new user</div> }
+      { info.user.status === 'failure' && <div>There was an error saving</div> }
     </div>;
   }
 }
@@ -115,7 +116,14 @@ class Container extends Component {
 
 By default your reducer is called with the `type` specified in the action only on the success stage, you can listen to pending and fail events too by listening for `getPendingActionType(type)` and `getFailureActionType(type)` types, also your reducer is called every time (pending, success, failure) after the higher order reducer does it's thing, but you can still get the old state as the third parameter (not sure why you would ever need to though)
 
-It's a little weird using the prop of the action creator to inject it's status info into state, but I couldn't really think of a better way to do it (WeakMaps somehow?)
+## How it works:
+
+The middleware checks to see if the `AWAIT_MARKER` was set on the action
+and if it was then dispatches three events with a `[AWAIT_META_CONTAINER]`
+property on the meta property of the action.  
+The reducer listens for actions with a meta of `[AWAIT_META_CONTAINER]` and
+when found will populate the `[AWAIT_INFO_CONTAINER]` property of the state.  
+`getInfo` just returns the `[AWAIT_INFO_CONTAINER]` of the passed in props
 
 [npm-image]: https://img.shields.io/npm/v/redux-await.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/redux-await
