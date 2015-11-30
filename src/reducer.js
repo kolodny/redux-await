@@ -6,6 +6,7 @@ export default reducer => (state, action) => {
     const awaitMeta = action.meta[AWAIT_META_CONTAINER];
     const { status } = awaitMeta;
 
+    /* istanbul ignore if */
     if (typeof state !== 'object') {
       throw new Error('redux-await only works with states which are objects');
     }

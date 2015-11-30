@@ -78,13 +78,13 @@ describe('redux-await', () => {
     store.subscribe(() => {
       states.push(store.getState());
       if (states.length === 4) {
-        expect(getInfo(states[0]).soon.status).toEqual('pending');
+        expect(getInfo(states[0])('soon').status).toEqual('pending');
         expect(states[0].wasPending).toEqual(true);
-        expect(getInfo(states[2]).soon.status).toEqual('success');
+        expect(getInfo(states[2])('soon').status).toEqual('success');
         expect(states[2].soon).toEqual('v!');
         expect(states[2].wasTested).toEqual(true);
-        expect(getInfo(states[3]).soon.status).toEqual('failure');
-        expect(getInfo(states[3]).soon.error.message).toEqual('no!');
+        expect(getInfo(states[3])('soon').status).toEqual('failure');
+        expect(getInfo(states[3])('soon').error.message).toEqual('no!');
         done();
       }
     });
