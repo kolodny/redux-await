@@ -1,12 +1,7 @@
 import { AWAIT_INFO_CONTAINER } from './constants';
 
 export default props => {
-  const container = props && props[AWAIT_INFO_CONTAINER];
-
-  /* istanbul ignore if */
-  if (!container) {
-    throw new Error("coudn't find any info");
-  }
+  const container = (props && props[AWAIT_INFO_CONTAINER]) || {};
 
   return prop => container[prop] || {};
 }
