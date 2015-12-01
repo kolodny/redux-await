@@ -11,7 +11,7 @@ export default reducer => (state, action) => {
       throw new Error('redux-await only works with states which are objects');
     }
 
-    const info = {};
+    const info = { ...state[AWAIT_INFO_CONTAINER] };
     awaitMeta.promiseKeys.forEach(prop => {
       info[prop] = { status };
       if (status === 'failure') {

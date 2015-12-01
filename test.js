@@ -80,6 +80,7 @@ describe('redux-await', () => {
       if (states.length === 4) {
         expect(getInfo(states[0])('soon').status).toEqual('pending');
         expect(states[0].wasPending).toEqual(true);
+        expect(getInfo(states[1])('soon').status).toEqual('pending');
         expect(getInfo(states[2])('soon').status).toEqual('success');
         expect(states[2].soon).toEqual('v!');
         expect(states[2].wasTested).toEqual(true);
@@ -91,7 +92,7 @@ describe('redux-await', () => {
     const generateRejection = () => new Promise((_, reject) => setTimeout(() => reject(new Error('no!')), 15));
 
                                                                               // smiley face;
-    store.dispatch({ type: 'TESTING', AWAIT_MARKER, payload: { soon: Promise.resolve('v'), ignore: 123 } });
+    store.dispatch({ type: 'TESTING', AWAIT_MARKER, payload: { soon: Promise.resolve('v'), heyo: Promise.resolve('heyo'), ignore: 123 } });
     store.dispatch({ type: 'TESTING', AWAIT_MARKER, payload: { soon: generateRejection(), ignore: 123 } });
   });
 
