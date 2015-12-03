@@ -56,7 +56,7 @@ Now your action creators can contain promises, you just need to add `AWAIT_MARKE
 ```js
 // old code
 //export const getUsers = users => ({
-//  type: ADD_USER,
+//  type: GET_USERS,
 //  payload: {
 //    users: users,
 //  },
@@ -71,7 +71,7 @@ Now your action creators can contain promises, you just need to add `AWAIT_MARKE
 // new code
 import { AWAIT_MARKER } from 'redux-await';
 export const getUsers = users => ({
- type: ADD_USER,
+ type: GET_USERS,
  AWAIT_MARKER,
  payload: {
    users: api.getUsers(), // returns promise
