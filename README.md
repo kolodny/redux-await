@@ -29,24 +29,24 @@ This module exposes a middleware and higher order reducer to take care of async 
 
 2. Wrap your reducers
 
-```js
-const reducer = (state = [], action = {}) => {
-  if (action.type === GET_USERS) {
-    return { ...state, users: action.payload.users };
-  }
-  if (action.type === ADD_USER) {
-    return { ...state, users: state.users.concat(action.payload.user) };
-  }
-  return state;
-}
+    ```js
+    const reducer = (state = [], action = {}) => {
+      if (action.type === GET_USERS) {
+        return { ...state, users: action.payload.users };
+      }
+      if (action.type === ADD_USER) {
+        return { ...state, users: state.users.concat(action.payload.user) };
+      }
+      return state;
+    }
 
-// old code
-// export default reducer;
+    // old code
+    // export default reducer;
 
-// new code
-import { createReducer } from 'redux-await';
-export default createReducer(reducer);
-```
+    // new code
+    import { createReducer } from 'redux-await';
+    export default createReducer(reducer);
+    ```
 
 Note, if you are using `combineReducers` then you need to wrap each reducer that you are combining independently and not the master reducer that `combineReducers` returns
 
