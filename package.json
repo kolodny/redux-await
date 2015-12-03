@@ -6,8 +6,8 @@
   "scripts": {
     "build": "babel src --out-dir lib",
     "prepublish": "npm run test && npm run build",
-    "test-cov": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha 'test.js' -- --reporter dot --require babel/register",
-    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha 'test.js' -- -R spec --require babel/register",
+    "test-cov": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha 'test.js' -x 'test.js' -- --reporter dot --require babel/register",
+    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha 'test.js' -x 'test.js' -- -R spec --require babel/register",
     "test": "mocha --compilers js:babel/register --recursive"
   },
   "author": "Moshe Kolodny",
