@@ -30,7 +30,8 @@ This module exposes a middleware and higher order reducer to take care of async 
 2. Wrap your reducers
 
     ```js
-    const reducer = (state = [], action = {}) => {
+    const initialState = { users: [] };
+    const reducer = (state = initialState, action = {}) => {
       if (action.type === GET_USERS) {
         return { ...state, users: action.payload.users };
       }

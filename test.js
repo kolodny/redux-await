@@ -67,8 +67,10 @@ describe('redux-await', () => {
   });
 
   it("does it's thing", done => {
+    let lastAction;
     const createStoreWithMiddleware = applyMiddleware(middleware)(createStore);
     const reducer = (state = {}, action) => {
+      lastAction = action;
       if (action.type === getPendingActionType('TESTING')) { return { ...state, wasPending: true } };
       if (action.type === 'TESTING') { return { ...state, wasTested: true, soon: action.payload.soon + '!' } }
       return state;
@@ -91,6 +93,9 @@ describe('redux-await', () => {
           expect(getInfo(states[5]).statuses.soon).toEqual('success');
           expect(getInfo(states[4]).errors.soon).toBeFalsy();
           expect(getInfo(states[5]).errors.soon).toBeFalsy();
+
+          // make sure we don't overwrite action.meta
+          expect(lastAction.meta.so).toEqual('meta');
           done();
         } catch (e) {
           done(e);
@@ -102,7 +107,7 @@ describe('redux-await', () => {
                                                                               // smiley face;
     store.dispatch({ type: 'TESTING', AWAIT_MARKER, payload: { soon: Promise.resolve('v'), heyo: Promise.resolve('heyo'), ignore: 123 } });
     store.dispatch({ type: 'TESTING', AWAIT_MARKER, payload: { soon: generateRejection(), ignore: 123 } });
-    setTimeout(() => store.dispatch({ type: 'TESTING', AWAIT_MARKER, payload: { soon: Promise.resolve('v'), heyo: Promise.resolve('heyo'), ignore: 123 } }), 20)
+    setTimeout(() => store.dispatch({ type: 'TESTING', AWAIT_MARKER, meta: {so: 'meta'}, payload: { soon: Promise.resolve('v'), heyo: Promise.resolve('heyo'), ignore: 123 } }), 20)
 
   });
 
