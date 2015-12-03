@@ -18,9 +18,15 @@ npm install --save redux-await
 
 This module exposes a middleware and higher order reducer to take care of async state in a redux app. You'll need to:
 
-1. Apply the middleware:  
-        `import { middleware as awaitMiddleware } from 'redux-await';`  
-        `let createStoreWithMiddleware = applyMiddleware( awaitMiddleware )(createStore);`
+2. Apply the middleware:
+
+    ```js
+    import { middleware as awaitMiddleware } from 'redux-await';
+    let createStoreWithMiddleware = applyMiddleware(
+      awaitMiddleware
+    )(createStore);
+    ```
+
 2. Wrap your reducers
 
 ```js
