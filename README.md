@@ -93,7 +93,7 @@ import { getInfo } from 'redux-await'
 class Container extends Component {
   render() {
     const { users, user } = this.props;
-    const info = getInfo(this.props);
+    const { statuses, errors } = getInfo(this.props);
 
     // old code
     //return <div>
@@ -102,11 +102,11 @@ class Container extends Component {
 
     // new code
     return <div>
-      { info('users').status === 'pending' && <div>Loading...</div> }
-      { info('users').status === 'success' && <MyTable data={users} /> }
-      { info('users').status === 'failure' && <div>Oops: {info('users').error.message}</div> }
-      { info('user').status === 'pending' && <div>Saving new user</div> }
-      { info('user').status === 'failure' && <div>There was an error saving</div> }
+      { statuses.users === 'pending' && <div>Loading...</div> }
+      { statuses.users === 'success' && <MyTable data={users} /> }
+      { statuses.users.status === 'failure' && <div>Oops: {errors.users.message}</div> }
+      { statuses.user === 'pending' && <div>Saving new user</div> }
+      { statuses.user === 'failure' && <div>There was an error saving</div> }
     </div>;
   }
 }
@@ -123,7 +123,8 @@ and if it was then dispatches three events with a `[AWAIT_META_CONTAINER]`
 property on the meta property of the action.  
 The reducer listens for actions with a meta of `[AWAIT_META_CONTAINER]` and
 when found will populate the `[AWAIT_INFO_CONTAINER]` property of the state.  
-`getInfo` just returns an a getter for `prop` as `[AWAIT_INFO_CONTAINER][prop] || {}` of the passed in props
+`getInfo` just returns the value of `state[AWAIT_INFO_CONTAINER]` which will be an object
+with contains a `statuses` and `errors` property or if it's falsly, default to `{ statuses: {}, errors: {} }`
 
 [npm-image]: https://img.shields.io/npm/v/redux-await.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/redux-await

@@ -77,16 +77,24 @@ describe('redux-await', () => {
     const states = [];
     store.subscribe(() => {
       states.push(store.getState());
-      if (states.length === 4) {
-        expect(getInfo(states[0])('soon').status).toEqual('pending');
-        expect(states[0].wasPending).toEqual(true);
-        expect(getInfo(states[1])('soon').status).toEqual('pending');
-        expect(getInfo(states[2])('soon').status).toEqual('success');
-        expect(states[2].soon).toEqual('v!');
-        expect(states[2].wasTested).toEqual(true);
-        expect(getInfo(states[3])('soon').status).toEqual('failure');
-        expect(getInfo(states[3])('soon').error.message).toEqual('no!');
-        done();
+      if (states.length === 6) {
+        try {
+          expect(getInfo(states[0]).statuses.soon).toEqual('pending');
+          expect(states[0].wasPending).toEqual(true);
+          expect(getInfo(states[1]).statuses.soon).toEqual('pending');
+          expect(getInfo(states[2]).statuses.soon).toEqual('success');
+          expect(states[2].soon).toEqual('v!');
+          expect(states[2].wasTested).toEqual(true);
+          expect(getInfo(states[3]).statuses.soon).toEqual('failure');
+          expect(getInfo(states[3]).errors.soon.message).toEqual('no!');
+          expect(getInfo(states[4]).statuses.soon).toEqual('pending');
+          expect(getInfo(states[5]).statuses.soon).toEqual('success');
+          expect(getInfo(states[4]).errors.soon).toBeFalsy();
+          expect(getInfo(states[5]).errors.soon).toBeFalsy();
+          done();
+        } catch (e) {
+          done(e);
+        }
       }
     });
     const generateRejection = () => new Promise((_, reject) => setTimeout(() => reject(new Error('no!')), 15));
@@ -94,6 +102,8 @@ describe('redux-await', () => {
                                                                               // smiley face;
     store.dispatch({ type: 'TESTING', AWAIT_MARKER, payload: { soon: Promise.resolve('v'), heyo: Promise.resolve('heyo'), ignore: 123 } });
     store.dispatch({ type: 'TESTING', AWAIT_MARKER, payload: { soon: generateRejection(), ignore: 123 } });
+    setTimeout(() => store.dispatch({ type: 'TESTING', AWAIT_MARKER, payload: { soon: Promise.resolve('v'), heyo: Promise.resolve('heyo'), ignore: 123 } }), 20)
+
   });
 
 });

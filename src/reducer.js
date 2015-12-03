@@ -11,14 +11,21 @@ export default reducer => (state, action) => {
       throw new Error('redux-await only works with states which are objects');
     }
 
-    const info = { ...state[AWAIT_INFO_CONTAINER] };
+    const info = state[AWAIT_INFO_CONTAINER] || {};
+    const statuses = { ...info.statuses };
+    const errors = { ...info.errors };
     awaitMeta.promiseKeys.forEach(prop => {
-      info[prop] = { status };
+      statuses[prop] = status;
       if (status === 'failure') {
-        info[prop].error = action.payload;
+        errors[prop] = action.payload;
+      } else {
+        // only unset errors prop if previously set
+        if (errors[prop]) {
+          errors[prop] = null;
+        }
       }
     });
-    const nextState = { ...state, [AWAIT_INFO_CONTAINER]: info };
+    const nextState = { ...state, [AWAIT_INFO_CONTAINER]: { statuses, errors } };
 
     return reducer(nextState, action, state);
   }
