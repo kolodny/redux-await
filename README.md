@@ -93,7 +93,7 @@ import { getInfo } from 'redux-await'
 
 class Container extends Component {
   render() {
-    const { users, user } = this.props;
+    const { users } = this.props;
     const { statuses, errors } = getInfo(this.props);
 
     // old code
