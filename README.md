@@ -113,6 +113,325 @@ class Container extends Component {
 }
 ```
 
+# Why
+
+Redux is mostly concerned about how to manage state in a synchronous setting. Async apps create
+challenges like keeping track of the async status and dealing with async errors.
+While it is possible to build an app this way using
+[redux-thunk](https://github.com/gaearon/redux-thunk)
+and/or
+[redux-promise](https://github.com/acdlite/redux-promise)
+it tends to bloat the app and it makes unit testing needlessly verbose
+
+`redux-await` tries to solve all of these problems by keeping track of async payloads by means
+of a middleware and higher order reducer pair. Let's walk through the development of an app (App 1)
+that starts without any async and then needs to start converting action from sync to async. We'll
+first try only using `redux-thunk` to solve this (App 2), and then see how to solve this with
+`redux-await` (App 3)
+
+Let's talk about use cases. Imagine you had a TODO app (the Hello World of SPAs) and you stored your todos in localStorage, your app might look something like App 1:
+
+## [App1 demo](http://kolodny.github.io/redux-await/app1/)
+### App 1
+```js
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, connect } from 'react-redux';
+import { applyMiddleware, createStore } from 'redux';
+import thunk from 'redux-thunk';
+
+const GET_TODOS = 'GET_TODOS';
+const ADD_TODO = 'ADD_TODO';
+const SAVE_APP = 'SAVE_APP';
+const actions = {
+  getTodos() {
+    const todos = JSON.parse(localStorage.todos || '[]');
+    return { type: GET_TODOS, payload: { todos } };
+  },
+  addTodo(todo) {
+    return { type: ADD_TODO, payload: { todo } };
+  },
+  saveApp() {
+    return (dispatch, getState) => {
+      localStorage.todos = JSON.stringify(getState().todos);
+      dispatch({ type: SAVE_APP });
+    }
+  },
+};
+const initialState = { isAppSynced: false, todos: [] };
+const reducer = (state = initialState, action = {}) => {
+  if (action.type === GET_TODOS) {
+    return { ...state, isAppSynced: true, todos: action.payload.todos };
+  }
+  if (action.type === ADD_TODO) {
+    return { ...state, isAppSynced: false, todos: state.todos.concat(action.payload.todo) };
+  }
+  if (action.type === SAVE_APP) {
+    return { ...state, isAppSynced: true };
+  }
+  return state;
+};
+const store = applyMiddleware(thunk)(createStore)(reducer);
+
+@connect(state => state)
+class App extends Component {
+  componentDidMount() {
+    this.props.dispatch(actions.getTodos());
+  }
+  render() {
+    const { dispatch, todos, isAppSynced } = this.props;
+    const { input } = this.refs;
+    return <div>
+      {isAppSynced && 'app is synced up'}
+      <ul>{todos.map(todo => <li>{todo}</li>)}</ul>
+      <input ref="input" type="text" onBlur={() => dispatch(actions.addTodo(input.value))} />
+      <button onClick={() => dispatch(actions.saveApp())}>Sync</button>
+      <br />
+      <pre>{JSON.stringify(store.getState(), null, 2)}</pre>
+    </div>;
+  }
+}
+
+ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
+```
+
+Looks cool, but let's say you want to start using an API to store the state, now your app will look something like App 2:
+
+## [App2 demo](http://kolodny.github.io/redux-await/app2/)
+### App 2
+```js
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, connect } from 'react-redux';
+import { applyMiddleware, createStore } from 'redux';
+import thunk from 'redux-thunk';
+
+// this not an API, this is a tribute
+const api = {
+  save(data) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        localStorage.todos = JSON.stringify(data);
+        resolve(true);
+      }, 2000);
+    });
+  },
+  get() {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(JSON.parse(localStorage.todos || '[]'));
+      }, 1000);
+    });
+  }
+}
+
+const GET_TODOS_PENDING = 'GET_TODOS_PENDING';
+const GET_TODOS = 'GET_TODOS';
+const GET_TODOS_ERROR = 'GET_TODOS_ERROR';
+const ADD_TODO = 'ADD_TODO';
+const SAVE_APP_PENDING = 'SAVE_APP_PENDING'
+const SAVE_APP = 'SAVE_APP';
+const SAVE_APP_ERROR = 'SAVE_APP_ERROR';
+const actions = {
+  getTodos() {
+    return dispatch => {
+      dispatch({ type: GET_TODOS_PENDING });
+      api.get()
+        .then(todos => dispatch({ type: GET_TODOS, payload: { todos } }))
+        .catch(error => dispatch({ type: GET_TODOS_ERROR, payload: error, error: true }))
+      ;
+      ;
+    }
+  },
+  addTodo(todo) {
+    return { type: ADD_TODO, payload: { todo } };
+  },
+  saveApp() {
+    return (dispatch, getState) => {
+      dispatch({ type: SAVE_APP_PENDING });
+      api.save(getState().todos)
+        .then(() => dispatch({ type: SAVE_APP }))
+        .catch(error => dispatch({ type: SAVE_APP_ERROR, payload: error, error: true }))
+      ;
+    }
+  },
+};
+const initialState = {
+  isAppSynced: false,
+  isFetching: false,
+  fetchingError: null,
+  isSaving: false,
+  savingError: null,
+  todos: [],
+};
+const reducer = (state = initialState, action = {}) => {
+  if (action.type === GET_TODOS_PENDING) {
+    return { ...state, isFetching: true, fetchingError: null };
+  }
+  if (action.type === GET_TODOS) {
+    return {
+      ...state,
+      isAppSynced: true,
+      isFetching: false,
+      fetchingError: null,
+      todos: action.payload.todos,
+    };
+  }
+  if (action.type === GET_TODOS_ERROR) {
+    return { ...state, isFetching: false, fetchingError: action.payload.message };
+  }
+  if (action.type === ADD_TODO) {
+    return { ...state, isAppSynced: false, todos: state.todos.concat(action.payload.todo) };
+  }
+  if (action.type === SAVE_APP_PENDING) {
+    return { ...state, isSaving: true, savingError: null };
+  }
+  if (action.type === SAVE_APP) {
+    return { ...state, isAppSynced: true, isSaving: false, savingError: null };
+  }
+  if (action === SAVE_APP_ERROR) {
+    return { ...state, isSaving: false, savingError: action.payload.message }
+  }
+  return state;
+};
+const store = applyMiddleware(thunk)(createStore)(reducer);
+
+@connect(state => state)
+class App extends Component {
+  componentDidMount() {
+    this.props.dispatch(actions.getTodos());
+  }
+  render() {
+    const { dispatch, todos, isAppSynced, isFetching, fetchingError, isSaving, savingError } = this.props;
+    const { input } = this.refs;
+    return <div>
+      {isAppSynced && 'app is synced up'}
+      {isFetching && 'getting todos'}
+      {fetchingError && 'there was an error getting todos: ' + fetchingError}
+      {isSaving && 'saving todos'}
+      {savingError && 'there was an error saving todos: ' + savingError}
+      <ul>{todos.map(todo => <li>{todo}</li>)}</ul>
+      <input ref="input" type="text" onBlur={() => dispatch(actions.addTodo(input.value))} />
+      <button onClick={() => dispatch(actions.saveApp())}>Sync</button>
+      <br />
+      <pre>{JSON.stringify(store.getState(), null, 2)}</pre>
+    </div>;
+  }
+}
+
+ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
+```
+
+As you can see there's a lot of async logic and state we don't want to have to deal with. Here's how you would do it in App 3 with `redux-await`:
+
+## [App3 demo](http://kolodny.github.io/redux-await/app3/)
+### App 3
+
+
+```js
+import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
+import { Provider, connect } from 'react-redux';
+import { applyMiddleware, createStore } from 'redux';
+import thunk from 'redux-thunk';
+import {
+  AWAIT_MARKER,
+  createReducer,
+  getInfo,
+  middleware as awaitMiddleware,
+} from 'redux-await';
+
+// this not an API, this is a tribute
+const api = {
+  save(data) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        localStorage.todos = JSON.stringify(data);
+        resolve(true);
+      }, 2000);
+    });
+  },
+  get() {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(JSON.parse(localStorage.todos || '[]'));
+      }, 1000);
+    });
+  }
+}
+
+const GET_TODOS = 'GET_TODOS';
+const ADD_TODO = 'ADD_TODO';
+const SAVE_APP = 'SAVE_APP';
+const actions = {
+  getTodos() {
+    const todos = api.get();
+    return {
+      type: GET_TODOS,
+      AWAIT_MARKER,
+      payload: {
+        todos: api.get(),
+      },
+    };
+  },
+  addTodo(todo) {
+    return { type: ADD_TODO, payload: { todo } };
+  },
+  saveApp() {
+    return (dispatch, getState) => {
+      dispatch({
+        type: SAVE_APP,
+        AWAIT_MARKER,
+        payload: {
+          save: api.save(getState().todos),
+        },
+      });
+    }
+  },
+};
+const initialState = { isAppSynced: false, todos: [] };
+const reducer = (state = initialState, action = {}) => {
+  if (action.type === GET_TODOS) {
+    return { ...state, isAppSynced: true, todos: action.payload.todos };
+  }
+  if (action.type === ADD_TODO) {
+    return { ...state, isAppSynced: false, todos: state.todos.concat(action.payload.todo) };
+  }
+  if (action.type === SAVE_APP) {
+    return { ...state, isAppSynced: true };
+  }
+  return state;
+};
+const wrappedReducer = createReducer(reducer);
+const store = applyMiddleware(thunk, awaitMiddleware)(createStore)(wrappedReducer);
+
+@connect(state => state)
+class App extends Component {
+  componentDidMount() {
+    this.props.dispatch(actions.getTodos());
+  }
+  render() {
+    const { dispatch, todos, isAppSynced } = this.props;
+    const { statuses, errors } = getInfo(this.props);
+    const { input } = this.refs;
+    return <div>
+      {isAppSynced && 'app is synced up'}
+      {statuses.todos === 'pending' && 'getting todos'}
+      {statuses.todos === 'failure' && 'there was an error getting todos: ' + errors.todos.message}
+      {statuses.save === 'pending' && 'saving todos'}
+      {errors.save && 'there was an error saving todos: ' + errors.save.message}
+      <ul>{todos.map(todo => <li>{todo}</li>)}</ul>
+      <input ref="input" type="text" onBlur={() => dispatch(actions.addTodo(input.value))} />
+      <button onClick={() => dispatch(actions.saveApp())}>Sync</button>
+      <br />
+      <pre>{JSON.stringify(store.getState(), null, 2)}</pre>
+    </div>;
+  }
+}
+
+ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
+```
+
 ## Advanced Stuff
 
 By default your reducer is called with the `type` specified in the action only on the success stage, you can listen to pending and fail events too by listening for `getPendingActionType(type)` and `getFailureActionType(type)` types, also your reducer is called every time (pending, success, failure) after the higher order reducer does it's thing, but you can still get the old state as the third parameter (not sure why you would ever need to though)
