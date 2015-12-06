@@ -50,7 +50,8 @@ class App extends Component {
       <ul>{todos.map(todo => <li>{todo}</li>)}</ul>
       <input ref="input" type="text" onBlur={() => dispatch(actions.addTodo(input.value))} />
       <button onClick={() => dispatch(actions.saveApp())}>Sync</button>
-      {JSON.stringify(store.getState())}
+      <br />
+      <pre>{JSON.stringify(store.getState(), null, 2)}</pre>
     </div>;
   }
 }
