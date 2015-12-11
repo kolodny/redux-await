@@ -5,10 +5,11 @@
   "main": "./lib/index.js",
   "scripts": {
     "build": "babel src --out-dir lib",
-    "prepublish": "npm run test && npm run build",
+    "prepublish": "npm run test && npm run test-react-e2e && npm run build",
+    "test-react-e2e": "npm run build && node test/test-redux/run-e2e-test.js",
     "test-cov": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha 'test.js' -x 'test.js' -- --reporter dot --require babel/register",
     "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha 'test.js' -x 'test.js' -- -R spec --require babel/register",
-    "test": "mocha --compilers js:babel/register --recursive"
+    "test": "mocha --compilers js:babel/register 'test/*.js'"
   },
   "author": "Moshe Kolodny",
   "license": "MIT",
@@ -16,14 +17,21 @@
     "babel": "^5.8.34",
     "coveralls": "^2.11.4",
     "expect": "^1.13.0",
+    "fs-extra": "^0.26.2",
     "istanbul": "^0.4.1",
+    "jsdom": "^7.2.0",
+    "mkdirp": "^0.5.1",
     "mocha": "^2.3.4",
-    "redux": "^3.0.4"
+    "redux": "^3.0.4",
+    "rimraf": "^2.4.4"
   },
   "dependencies": {
     "expect": "^1.13.0",
     "redux": "^3.0.4",
     "babel": "^5.8.34"
+  },
+  "peerDependencies": {
+    "react-redux": "*"
   },
   "repository": {
     "type": "git",
