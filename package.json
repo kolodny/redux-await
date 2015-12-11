@@ -26,13 +26,10 @@
     "react-dom": "^0.14.3",
     "react-redux": "^4.0.0",
     "redux": "^3.0.4",
+    "redux-thunk": "^1.0.0",
     "rimraf": "^2.4.4"
   },
-  "dependencies": {
-    "expect": "^1.13.0",
-    "redux": "^3.0.4",
-    "babel": "^5.8.34"
-  },
+  "dependencies": {},
   "peerDependencies": {
     "react-redux": "*"
   },
