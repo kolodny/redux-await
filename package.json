@@ -7,8 +7,6 @@
     "build": "babel src --out-dir lib",
     "prepublish": "npm run test && npm run test-react-e2e && npm run build",
     "test-react-e2e": "npm run build && node test/test-redux/run-e2e-test.js",
-    "test-cov": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha 'test.js' -x 'test.js' -- --reporter dot --require babel/register",
-    "test-travis": "node ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha 'test.js' -x 'test.js' -- -R spec --require babel/register",
     "test": "mocha --compilers js:babel/register 'test/*.js'"
   },
   "author": "Moshe Kolodny",

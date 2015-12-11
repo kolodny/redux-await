@@ -3,6 +3,4 @@ node_js:
   - "iojs"
   - "4"
   - "5"
-script: "npm run-script test-travis"
-# Send coverage data to Coveralls
-after_script: "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+script: "npm test"
