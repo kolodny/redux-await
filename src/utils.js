@@ -20,8 +20,6 @@ export const getNonPromiseProperties = obj => {
   }, {});
 };
 
-// taken from babel helper, we don't need to cover this
-/* istanbul ignore next */
 export const objectWithoutProperties = (obj, keys) => {
   var target = {};
   for (var i in obj) {

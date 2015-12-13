@@ -1,5 +1,4 @@
 import { connect } from 'react-redux';
-import { AWAIT_INFO_CONTAINER } from './';
 
 export default (mapStateToProps, ...args) => {
   return connect(state => {

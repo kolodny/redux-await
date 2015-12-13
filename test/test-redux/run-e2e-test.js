@@ -19,4 +19,4 @@ mkdirp(nodeModulesReduxAwaitPath);
 fs.copySync(reduxAwaitLibPath, nodeModulesReduxAwaitPath);
 fs.copySync(codeToRunPath, indexFileLocation)
 
-spawn(_mochaPath, ['--require', 'babel/register', indexFileLocation], {stdio: 'inherit'}).on('exit', process.exit);
+spawn(_mochaPath, ['--require', 'babel-register', indexFileLocation], {stdio: 'inherit'}).on('exit', process.exit);
