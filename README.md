@@ -102,7 +102,7 @@ export const addTodo = todo => ({
 });
 ```
 
-Now your containers can hardly need to change at all:
+Now your containers barely need to change:
 
 ```js
 class Container extends Component {
