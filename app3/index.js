@@ -1,12 +1,14 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-import { Provider, connect } from 'react-redux';
-import { applyMiddleware, createStore } from 'redux';
+import { Provider } from 'react-redux';
+import { applyMiddleware, createStore, combineReducers } from 'redux';
 import thunk from 'redux-thunk';
+import createLogger from 'redux-logger';
 import {
   AWAIT_MARKER,
   createReducer,
-  getInfo,
+  connect,
+  reducer as awaitReducer,
   middleware as awaitMiddleware,
 } from 'redux-await';
 
@@ -34,7 +36,6 @@ const ADD_TODO = 'ADD_TODO';
 const SAVE_APP = 'SAVE_APP';
 const actions = {
   getTodos() {
-    const todos = api.get();
     return {
       type: GET_TODOS,
       AWAIT_MARKER,
@@ -52,14 +53,14 @@ const actions = {
         type: SAVE_APP,
         AWAIT_MARKER,
         payload: {
-          save: api.save(getState().todos),
+          save: api.save(getState().todos.todos),
         },
       });
     }
   },
 };
 const initialState = { isAppSynced: false, todos: [] };
-const reducer = (state = initialState, action = {}) => {
+const todosReducer = (state = initialState, action = {}) => {
   if (action.type === GET_TODOS) {
     return { ...state, isAppSynced: true, todos: action.payload.todos };
   }
@@ -71,17 +72,19 @@ const reducer = (state = initialState, action = {}) => {
   }
   return state;
 };
-const wrappedReducer = createReducer(reducer);
-const store = applyMiddleware(thunk, awaitMiddleware)(createStore)(wrappedReducer);
+const reducer = combineReducers({
+  todos: todosReducer,
+  await: awaitReducer,
+})
 
-@connect(state => state)
+const store = applyMiddleware(thunk, awaitMiddleware, createLogger())(createStore)(reducer);
+
 class App extends Component {
   componentDidMount() {
     this.props.dispatch(actions.getTodos());
   }
   render() {
-    const { dispatch, todos, isAppSynced } = this.props;
-    const { statuses, errors } = getInfo(this.props);
+    const { dispatch, todos, isAppSynced, statuses, errors } = this.props;
     const { input } = this.refs;
     return <div>
       {isAppSynced && 'app is synced up'}
@@ -98,4 +101,7 @@ class App extends Component {
   }
 }
 
-ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
+
+const ConnectedApp = connect(state => state.todos)(App);
+
+ReactDOM.render(<Provider store={store}><ConnectedApp /></Provider>, document.getElementById('root'));

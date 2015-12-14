@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, connect } from 'react-redux';
-import { applyMiddleware, createStore } from 'redux';
+import { applyMiddleware, createStore, combineReducers } from 'redux';
 import thunk from 'redux-thunk';
+import createLogger from 'redux-logger';
 
 const GET_TODOS = 'GET_TODOS';
 const ADD_TODO = 'ADD_TODO';
@@ -17,13 +18,13 @@ const actions = {
   },
   saveApp() {
     return (dispatch, getState) => {
-      localStorage.todos = JSON.stringify(getState().todos);
+      localStorage.todos = JSON.stringify(getState().todos.todos);
       dispatch({ type: SAVE_APP });
     }
   },
 };
 const initialState = { isAppSynced: false, todos: [] };
-const reducer = (state = initialState, action = {}) => {
+const todosReducer = (state = initialState, action = {}) => {
   if (action.type === GET_TODOS) {
     return { ...state, isAppSynced: true, todos: action.payload.todos };
   }
@@ -35,9 +36,11 @@ const reducer = (state = initialState, action = {}) => {
   }
   return state;
 };
-const store = applyMiddleware(thunk)(createStore)(reducer);
+const reducer = combineReducers({
+  todos: todosReducer,
+})
+const store = applyMiddleware(thunk, createLogger())(createStore)(reducer);
 
-@connect(state => state)
 class App extends Component {
   componentDidMount() {
     this.props.dispatch(actions.getTodos());
@@ -55,5 +58,6 @@ class App extends Component {
     </div>;
   }
 }
+const ConnectedApp = connect(state => state.todos)(App);
 
-ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
+ReactDOM.render(<Provider store={store}><ConnectedApp /></Provider>, document.getElementById('root'));

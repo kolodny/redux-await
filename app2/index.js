@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, connect } from 'react-redux';
-import { applyMiddleware, createStore } from 'redux';
+import { applyMiddleware, createStore, combineReducers } from 'redux';
 import thunk from 'redux-thunk';
+import createLogger from 'redux-logger';
 
 // this not an API, this is a tribute
 const api = {
@@ -47,7 +48,7 @@ const actions = {
   saveApp() {
     return (dispatch, getState) => {
       dispatch({ type: SAVE_APP_PENDING });
-      api.save(getState().todos)
+      api.save(getState().todos.todos)
         .then(() => dispatch({ type: SAVE_APP }))
         .catch(error => dispatch({ type: SAVE_APP_ERROR, payload: error, error: true }))
       ;
@@ -62,7 +63,7 @@ const initialState = {
   savingError: null,
   todos: [],
 };
-const reducer = (state = initialState, action = {}) => {
+const todosReducer = (state = initialState, action = {}) => {
   if (action.type === GET_TODOS_PENDING) {
     return { ...state, isFetching: true, fetchingError: null };
   }
@@ -92,9 +93,11 @@ const reducer = (state = initialState, action = {}) => {
   }
   return state;
 };
-const store = applyMiddleware(thunk)(createStore)(reducer);
+const reducer = combineReducers({
+  todos: todosReducer,
+})
+const store = applyMiddleware(thunk, createLogger())(createStore)(reducer);
 
-@connect(state => state)
 class App extends Component {
   componentDidMount() {
     this.props.dispatch(actions.getTodos());
@@ -117,4 +120,6 @@ class App extends Component {
   }
 }
 
-ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
+const ConnectedApp = connect(state => state.todos)(App);
+
+ReactDOM.render(<Provider store={store}><ConnectedApp /></Provider>, document.getElementById('root'));
