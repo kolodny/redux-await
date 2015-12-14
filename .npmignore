@@ -6,3 +6,5 @@ test.js
 .travis.yml
 oldtest.js
 loader.js
+.nyc_output/
+test/
