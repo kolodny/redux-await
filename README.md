@@ -8,6 +8,10 @@ redux-await
 
 Manage async redux actions sanely
 
+# Breaking Changes!!
+`redux-await` now takes control of a branch of your state/reducer tree similar to `redux-form`, and also like `redux-form` you need to use this module's version of `connect` and not `react-redux`'s
+
+
 ## Install
 
 ```js
@@ -16,9 +20,10 @@ npm install --save redux-await
 
 ## Usage
 
-This module exposes a middleware and higher order reducer to take care of async state in a redux app. You'll need to:
+This module exposes a middleware, reducer, and connector to take care of async state in a redux
+app. You'll need to:
 
-2. Apply the middleware:
+1. Apply the middleware:
 
     ```js
     import { middleware as awaitMiddleware } from 'redux-await';
@@ -27,90 +32,106 @@ This module exposes a middleware and higher order reducer to take care of async 
     )(createStore);
     ```
 
-2. Wrap your reducers
+2. Install the reducer into the `await` path of your `combineReducers`
 
     ```js
-    const initialState = { users: [] };
-    const reducer = (state = initialState, action = {}) => {
-      if (action.type === GET_USERS) {
-        return { ...state, users: action.payload.users };
-      }
-      if (action.type === ADD_USER) {
-        return { ...state, users: state.users.concat(action.payload.user) };
-      }
-      return state;
-    }
+    import reducers from './reducers';
 
     // old code
-    // export default reducer;
+    // const store = applyMiddleware(thunk)(createStore)(reducers);
 
     // new code
-    import { createReducer } from 'redux-await';
-    export default createReducer(reducer);
+    import { reducer as awaitReducer } from 'redux-await';
+    const store = applyMiddleware(thunk, awaitMiddleware)(createStore)({
+      ...reducers,
+      await: awaitReducer,
+    });
     ```
 
-Note, if you are using `combineReducers` then you need to wrap each reducer that you are combining independently and not the master reducer that `combineReducers` returns
+3. Use the `connect` function from this module and not `react-redux`'s
 
-Now your action creators can contain promises, you just need to add `AWAIT_MARKER` to the action like this:
+    ```js
+    // old code
+    // import { connect } from 'react-redux';
+
+    // new code
+    import { connect } from 'redux-await';
+
+    class FooPage extends Component {
+      render() { /* ... */ }
+    }
+
+    export default connect(state => state.foo)(FooPage)
+
+    ```
+
+
+Now your action payloads can contain promises, you just need to add `AWAIT_MARKER` to the
+action like this:
 
 ```js
 // old code
-//export const getUsers = users => ({
-//  type: GET_USERS,
+//export const getTodos = () => ({
+//  type: GET_TODOS,
 //  payload: {
-//    users: users,
+//    loadedTodos: localStorage.todos,
 //  },
 //});
-//export const addUser = user => ({
-//  type: ADD_USER,
+//export const addTodo = todo => ({
+//  type: ADD_TODO,
 //  payload: {
-//    user: user,
+//    savedTodo: todo,
 //  },
 //});
 
 // new code
 import { AWAIT_MARKER } from 'redux-await';
-export const getUsers = users => ({
- type: GET_USERS,
- AWAIT_MARKER,
- payload: {
-   users: api.getUsers(), // returns promise
- },
+export const getTodos = () => ({
+  type: GET_TODOS,
+  AWAIT_MARKER,
+  payload: {
+    loadedTodos: api.getTodos(), // returns promise
+  },
 });
-export const addUser = user => ({
- type: ADD_USER,
- AWAIT_MARKER,
- payload: {
-   user: api.generateUser(), // returns promise
- },
+export const addTodo = todo => ({
+  type: ADD_TODO,
+  AWAIT_MARKER,
+  payload: {
+    savedTodo: api.saveTodo(todo), // returns promise
+  },
 });
 ```
 
 Now your containers can hardly need to change at all:
 
 ```js
-import { getInfo } from 'redux-await'
-
 class Container extends Component {
   render() {
-    const { users } = this.props;
-    const { statuses, errors } = getInfo(this.props);
+    const { todos, statuses, errors } = this.props;
 
     // old code
     //return <div>
-    //  <MyTable data={users} />
+    //  <MyList data={todos} />
     //</div>;
 
     // new code
     return <div>
-      { statuses.users === 'pending' && <div>Loading...</div> }
-      { statuses.users === 'success' && <MyTable data={users} /> }
-      { statuses.users.status === 'failure' && <div>Oops: {errors.users.message}</div> }
-      { statuses.user === 'pending' && <div>Saving new user</div> }
-      { statuses.user === 'failure' && <div>There was an error saving</div> }
+      { statuses.loadedTodos === 'pending' && <div>Loading...</div> }
+      { statuses.loadedTodos === 'success' && <MyList data={loadedTodos} /> }
+      { statuses.loadedTodos.status === 'failure' && <div>Oops: {errors.loadedTodos.message}</div> }
+      { statuses.savedTodo === 'pending' && <div>Saving new savedTodo</div> }
+      { statuses.savedTodo === 'failure' && <div>There was an error saving</div> }
     </div>;
   }
 }
+
+//old code
+// import { connect } from 'react-redux';
+
+// new code
+import { connect } from 'redux-await'; // it just spreads state.await on props
+
+export default connect(state => state.todos)(Container)
 ```
 
 # Why
@@ -124,12 +145,12 @@ and/or
 it tends to bloat the app and it makes unit testing needlessly verbose
 
 `redux-await` tries to solve all of these problems by keeping track of async payloads by means
-of a middleware and higher order reducer pair. Let's walk through the development of an app (App 1)
-that starts without any async and then needs to start converting action from sync to async. We'll
-first try only using `redux-thunk` to solve this (App 2), and then see how to solve this with
-`redux-await` (App 3)
+of a middleware and a reducer keeping track of payload properties statuses. Let's walk
+through the development of a TODO app (App 1) that starts without any async and then needs to
+start converting action from sync to async. We'll first try only using `redux-thunk` to solve
+this (App 2), and then see how to solve this with `redux-await` (App 3)
 
-Let's talk about use cases. Imagine you had a TODO app (the Hello World of SPAs) and you stored your todos in localStorage, your app might look something like App 1:
+For the first version of the app we're going to store the todos in localStorage. Here's a simple way we would do it:
 
 ## [App1 demo](http://kolodny.github.io/redux-await/app1/)
 ### App 1
@@ -137,8 +158,9 @@ Let's talk about use cases. Imagine you had a TODO app (the Hello World of SPAs)
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, connect } from 'react-redux';
-import { applyMiddleware, createStore } from 'redux';
+import { applyMiddleware, createStore, combineReducers } from 'redux';
 import thunk from 'redux-thunk';
+import createLogger from 'redux-logger';
 
 const GET_TODOS = 'GET_TODOS';
 const ADD_TODO = 'ADD_TODO';
@@ -153,13 +175,13 @@ const actions = {
   },
   saveApp() {
     return (dispatch, getState) => {
-      localStorage.todos = JSON.stringify(getState().todos);
+      localStorage.todos = JSON.stringify(getState().todos.todos);
       dispatch({ type: SAVE_APP });
     }
   },
 };
 const initialState = { isAppSynced: false, todos: [] };
-const reducer = (state = initialState, action = {}) => {
+const todosReducer = (state = initialState, action = {}) => {
   if (action.type === GET_TODOS) {
     return { ...state, isAppSynced: true, todos: action.payload.todos };
   }
@@ -171,9 +193,11 @@ const reducer = (state = initialState, action = {}) => {
   }
   return state;
 };
-const store = applyMiddleware(thunk)(createStore)(reducer);
+const reducer = combineReducers({
+  todos: todosReducer,
+})
+const store = applyMiddleware(thunk, createLogger())(createStore)(reducer);
 
-@connect(state => state)
 class App extends Component {
   componentDidMount() {
     this.props.dispatch(actions.getTodos());
@@ -191,11 +215,13 @@ class App extends Component {
     </div>;
   }
 }
+const ConnectedApp = connect(state => state.todos)(App);
 
-ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
+ReactDOM.render(<Provider store={store}><ConnectedApp /></Provider>, document.getElementById('root'));
 ```
 
-Looks cool, but let's say you want to start using an API to store the state, now your app will look something like App 2:
+Looks cool (it's a POC so it's purposely minimal), but let's say you want to start using an API
+which is async to store the state, now your app will look something like App 2:
 
 ## [App2 demo](http://kolodny.github.io/redux-await/app2/)
 ### App 2
@@ -203,8 +229,9 @@ Looks cool, but let's say you want to start using an API to store the state, now
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, connect } from 'react-redux';
-import { applyMiddleware, createStore } from 'redux';
+import { applyMiddleware, createStore, combineReducers } from 'redux';
 import thunk from 'redux-thunk';
+import createLogger from 'redux-logger';
 
 // this not an API, this is a tribute
 const api = {
@@ -249,7 +276,7 @@ const actions = {
   saveApp() {
     return (dispatch, getState) => {
       dispatch({ type: SAVE_APP_PENDING });
-      api.save(getState().todos)
+      api.save(getState().todos.todos)
         .then(() => dispatch({ type: SAVE_APP }))
         .catch(error => dispatch({ type: SAVE_APP_ERROR, payload: error, error: true }))
       ;
@@ -264,7 +291,7 @@ const initialState = {
   savingError: null,
   todos: [],
 };
-const reducer = (state = initialState, action = {}) => {
+const todosReducer = (state = initialState, action = {}) => {
   if (action.type === GET_TODOS_PENDING) {
     return { ...state, isFetching: true, fetchingError: null };
   }
@@ -294,9 +321,11 @@ const reducer = (state = initialState, action = {}) => {
   }
   return state;
 };
-const store = applyMiddleware(thunk)(createStore)(reducer);
+const reducer = combineReducers({
+  todos: todosReducer,
+})
+const store = applyMiddleware(thunk, createLogger())(createStore)(reducer);
 
-@connect(state => state)
 class App extends Component {
   componentDidMount() {
     this.props.dispatch(actions.getTodos());
@@ -319,10 +348,14 @@ class App extends Component {
   }
 }
 
-ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
+const ConnectedApp = connect(state => state.todos)(App);
+
+ReactDOM.render(<Provider store={store}><ConnectedApp /></Provider>, document.getElementById('root'));
 ```
 
-As you can see there's a lot of async logic and state we don't want to have to deal with. Here's how you would do it in App 3 with `redux-await`:
+As you can see there's a lot of async logic and state we don't want to have to deal with.
+This is 62 more LOC than the first version. Here's how you would do it in App 3 with
+`redux-await`:
 
 ## [App3 demo](http://kolodny.github.io/redux-await/app3/)
 ### App 3
@@ -331,13 +364,15 @@ As you can see there's a lot of async logic and state we don't want to have to d
 ```js
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-import { Provider, connect } from 'react-redux';
-import { applyMiddleware, createStore } from 'redux';
+import { Provider } from 'react-redux';
+import { applyMiddleware, createStore, combineReducers } from 'redux';
 import thunk from 'redux-thunk';
+import createLogger from 'redux-logger';
 import {
   AWAIT_MARKER,
   createReducer,
-  getInfo,
+  connect,
+  reducer as awaitReducer,
   middleware as awaitMiddleware,
 } from 'redux-await';
 
@@ -365,7 +400,6 @@ const ADD_TODO = 'ADD_TODO';
 const SAVE_APP = 'SAVE_APP';
 const actions = {
   getTodos() {
-    const todos = api.get();
     return {
       type: GET_TODOS,
       AWAIT_MARKER,
@@ -383,14 +417,14 @@ const actions = {
         type: SAVE_APP,
         AWAIT_MARKER,
         payload: {
-          save: api.save(getState().todos),
+          save: api.save(getState().todos.todos),
         },
       });
     }
   },
 };
 const initialState = { isAppSynced: false, todos: [] };
-const reducer = (state = initialState, action = {}) => {
+const todosReducer = (state = initialState, action = {}) => {
   if (action.type === GET_TODOS) {
     return { ...state, isAppSynced: true, todos: action.payload.todos };
   }
@@ -402,17 +436,19 @@ const reducer = (state = initialState, action = {}) => {
   }
   return state;
 };
-const wrappedReducer = createReducer(reducer);
-const store = applyMiddleware(thunk, awaitMiddleware)(createStore)(wrappedReducer);
+const reducer = combineReducers({
+  todos: todosReducer,
+  await: awaitReducer,
+})
 
-@connect(state => state)
+const store = applyMiddleware(thunk, awaitMiddleware, createLogger())(createStore)(reducer);
+
 class App extends Component {
   componentDidMount() {
     this.props.dispatch(actions.getTodos());
   }
   render() {
-    const { dispatch, todos, isAppSynced } = this.props;
-    const { statuses, errors } = getInfo(this.props);
+    const { dispatch, todos, isAppSynced, statuses, errors } = this.props;
     const { input } = this.refs;
     return <div>
       {isAppSynced && 'app is synced up'}
@@ -429,12 +465,26 @@ class App extends Component {
   }
 }
 
-ReactDOM.render(<Provider store={store}><App /></Provider>, document.getElementById('root'));
+
+const ConnectedApp = connect(state => state.todos)(App);
+
+ReactDOM.render(<Provider store={store}><ConnectedApp /></Provider>, document.getElementById('root'));
 ```
 
-## Advanced Stuff
+This version is very easy to reason about, in fact you can completely ignore the fact that the app is async at all. The `todosReducer` didn't need to have a single line changed!
+Note that this is 107 LOC compared to app2's 125 LOC
 
-By default your reducer is called with the `type` specified in the action only on the success stage, you can listen to pending and fail events too by listening for `getPendingActionType(type)` and `getFailureActionType(type)` types, also your reducer is called every time (pending, success, failure) after the higher order reducer does it's thing, but you can still get the old state as the third parameter (not sure why you would ever need to though)
+## Some pitfalls to watch out for
+
+You must either use this modules `connect` or manually spread the `await` part of the tree over
+`mapStateToProps`, you can also choose to name it something other than `await` and spread that
+yourself too.
+
+`redux-await` will name the `statuses` and `errors` prop the same as the payload prop so try to be
+as descriptive as possible when naming payload props since any payload props collision will
+overwrite the `statuses`/`errors` value. For a CRUD app don't always name it something like
+`records` because when you're loading `users.records` the app will also think you're loading
+`todos.records`
 
 ## How it works:
 
@@ -442,9 +492,8 @@ The middleware checks to see if the `AWAIT_MARKER` was set on the action
 and if it was then dispatches three events with a `[AWAIT_META_CONTAINER]`
 property on the meta property of the action.  
 The reducer listens for actions with a meta of `[AWAIT_META_CONTAINER]` and
-when found will populate the `[AWAIT_INFO_CONTAINER]` property of the state.  
-`getInfo` just returns the value of `state[AWAIT_INFO_CONTAINER]` which will be an object
-with contains a `statuses` and `errors` property or if it's falsly, default to `{ statuses: {}, errors: {} }`
+when found will set the `await` property of the state accordingly.
+
 
 [npm-image]: https://img.shields.io/npm/v/redux-await.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/redux-await

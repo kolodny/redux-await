@@ -7,3 +7,4 @@ test.js
 oldtest.js
 loader.js
 .nyc_output/
+test/
