@@ -25,7 +25,7 @@
     "jsdom": "^5.6.1",
     "mkdirp": "^0.5.1",
     "mocha": "^2.3.4",
-    "nyc": "^5.0.0",
+    "nyc": "git://github.com/bcoe/nyc.git#master",
     "react": "^0.14.3",
     "react-dom": "^0.14.3",
     "react-redux": "^4.0.0",
